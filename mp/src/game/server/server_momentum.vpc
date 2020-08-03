@@ -128,6 +128,9 @@ $Project "Server (Momentum)"
                 $File "$SRCDIR\game\shared\momentum\weapon\weapon_shareddefs.h"
             }
 
+            $File   "$SRCDIR\game\shared\momentum\mom_system_tricks.h"
+            $File   "$SRCDIR\game\shared\momentum\mom_system_tricks.cpp"
+
             $File "momentum\server_events.h"
             $File "momentum\server_events.cpp"
             $File "momentum\mapzones.h"
@@ -183,8 +186,6 @@ $Project "Server (Momentum)"
             $File "momentum\mom_system_progress.cpp"
             $File "momentum\mom_system_steam_richpresence.h"
             $File "momentum\mom_system_steam_richpresence.cpp"
-            $File "momentum\mom_system_tricksurf.h"
-            $File "momentum\mom_system_tricksurf.cpp"
             $File "momentum\mom_ruler.h"
             $File "momentum\mom_ruler.cpp"
             $File "momentum\mom_timer.h"

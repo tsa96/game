@@ -270,6 +270,7 @@ public:
 
     CNetworkVar(int, m_iID);
     CNetworkString(m_szZoneName, 32);
+    CNetworkVar(int, m_iDrawState);
 };
 
 // Our teleport trigger override with extra convenience features

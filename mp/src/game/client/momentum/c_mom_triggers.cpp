@@ -3,6 +3,9 @@
 #include "model_types.h"
 #include "util/mom_util.h"
 
+#include "momentum/mom_system_tricks.h"
+#undef CTriggerTrickZone
+
 #include "mom_shareddefs.h"
 #include "dt_utlvector_recv.h"
 #include "debugoverlay_shared.h"
@@ -212,23 +215,47 @@ LINK_ENTITY_TO_CLASS(trigger_momentum_trick, C_TriggerTrickZone);
 IMPLEMENT_CLIENTCLASS_DT(C_TriggerTrickZone, DT_TriggerTrickZone, CTriggerTrickZone)
 RecvPropInt(RECVINFO(m_iID)),
 RecvPropString(RECVINFO(m_szZoneName)),
+RecvPropInt(RECVINFO(m_iDrawState)),
 END_RECV_TABLE();
 
 C_TriggerTrickZone::C_TriggerTrickZone()
 {
-    m_iID = 0;
+    m_iID = -1;
     m_szZoneName.GetForModify()[0] = '\0';
+    m_iDrawState = TRICK_DRAW_NONE;
 }
 
 bool C_TriggerTrickZone::ShouldDrawOutline()
 {
-    return true;
+    return m_iDrawState > TRICK_DRAW_NONE;
 }
 
 bool C_TriggerTrickZone::GetOutlineColor()
 {
-    m_OutlineRenderer.outlineColor = COLOR_ORANGE;
+    // MOM_TODO allow customization here
+
+    Color clr;
+    if (m_iDrawState == TRICK_DRAW_REQUIRED)
+        clr = COLOR_ORANGE;
+    else if (m_iDrawState == TRICK_DRAW_OPTIONAL)
+        clr = COLOR_WHITE;
+    else if (m_iDrawState == TRICK_DRAW_END)
+        clr = COLOR_RED;
+    else
+        clr = COLOR_GREEN;
+
+    m_OutlineRenderer.outlineColor = clr;
     return true;
+}
+
+void C_TriggerTrickZone::OnDataChanged(DataUpdateType_t type)
+{
+    BaseClass::OnDataChanged(type);
+
+    if (type == DATA_UPDATE_CREATED)
+    {
+        g_pTrickSystem->AddZone(this);
+    }
 }
 
 // ======================================

@@ -6,7 +6,7 @@
 #include "mapzones_build.h"
 #include "fmtstr.h"
 #include "mom_system_gamemode.h"
-#include "mom_system_tricksurf.h"
+#include "mom_system_tricks.h"
 
 #include "tier0/memdbgon.h"
 
@@ -14,7 +14,7 @@ CON_COMMAND_F(mom_zone_generate, "Generates the .zon file for map zones.", FCVAR
 {
     if (g_pGameModeSystem->GameModeIs(GAMEMODE_TRICKSURF))
     {
-        g_pTricksurfSystem->SaveTrickDataToFile();
+        g_pTrickSystem->SaveTrickDataToFile();
     }
     else
     {

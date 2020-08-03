@@ -86,6 +86,11 @@
 
         "MOM_RunFlag_Reset" "Reset Flags"
 
+        // Tricks system
+        "MOM_Tricks_TrickList" "Tricks"
+        "MOM_Tricks_WIPTrickList" "WIP Tricks"
+        "MOM_Tricks_MapTeleList" "Map Teles"
+
     //Timer
         "MOM_SavedLocation" "Saveloc %s1/%s2"
         "MOM_Cheater_Message" "For your times to be able to submit,\nyou must turn sv_cheats off!"

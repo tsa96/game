@@ -145,4 +145,13 @@
     {
         "speed" "float"
     }
+    "trick_data_loaded"
+    {
+        
+    }
+    "tricks_tracking"
+    {
+        "type" "byte"
+        "num" "short"
+    }
 }

@@ -10,7 +10,7 @@
 #include "fmtstr.h"
 #include "mom_timer.h"
 #include "mom_modulecomms.h"
-#include "mom_system_tricksurf.h"
+#include "mom_system_tricks.h"
 
 #include "dt_utlvector_send.h"
 
@@ -386,19 +386,22 @@ LINK_ENTITY_TO_CLASS(trigger_momentum_trick, CTriggerTrickZone);
 IMPLEMENT_SERVERCLASS_ST(CTriggerTrickZone, DT_TriggerTrickZone)
 SendPropInt(SENDINFO(m_iID), -1, SPROP_UNSIGNED),
 SendPropString(SENDINFO(m_szZoneName)),
+SendPropInt(SENDINFO(m_iDrawState), 3, SPROP_UNSIGNED),
 END_SEND_TABLE();
 
 CTriggerTrickZone::CTriggerTrickZone()
 {
+    m_iTrackNumber = TRACK_ALL;
     m_iID = -1;
     m_szZoneName.GetForModify()[0] = '\0';
+    m_iDrawState = TRICK_DRAW_NONE;
 }
 
 void CTriggerTrickZone::Spawn()
 {
     BaseClass::Spawn();
 
-    g_pTricksurfSystem->AddZone(this);
+    g_pTrickSystem->AddZone(this);
 }
 
 int CTriggerTrickZone::GetZoneType()
@@ -427,7 +430,7 @@ void CTriggerTrickZone::OnStartTouch(CBaseEntity *pOther)
     if (pOther->IsPlayer())
     {
         const auto pMomPlayer = ToCMOMPlayer(pOther);
-        g_pTricksurfSystem->OnTrickZoneEnter(this, pMomPlayer);
+        g_pTrickSystem->OnTrickZoneEnter(this, pMomPlayer);
     }
 }
 
@@ -436,7 +439,7 @@ void CTriggerTrickZone::OnEndTouch(CBaseEntity *pOther)
     if (pOther->IsPlayer())
     {
         const auto pMomPlayer = ToCMOMPlayer(pOther);
-        g_pTricksurfSystem->OnTrickZoneExit(this, pMomPlayer);
+        g_pTrickSystem->OnTrickZoneExit(this, pMomPlayer);
     }
 }
 

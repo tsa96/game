@@ -2,9 +2,31 @@
 
 #include "igamesystem.h"
 
-struct SavedLocation_t;
-class CTriggerTrickZone;
+#define TRICK_DATA_KEY "TrickData"
+
+#ifdef CLIENT_DLL
+#define CMomentumPlayer C_MomentumPlayer
+#define CTriggerTrickZone C_TriggerTrickZone
+#endif
+
 class CMomentumPlayer;
+class CTriggerTrickZone;
+struct SavedLocation_t;
+
+enum TrickTrackingDrawState_t
+{
+    TRICK_DRAW_NONE = 0,
+    TRICK_DRAW_START,
+    TRICK_DRAW_REQUIRED,
+    TRICK_DRAW_OPTIONAL,
+    TRICK_DRAW_END
+};
+
+enum TrickTrackingUpdateType_t
+{
+    TRICK_TRACK_UPDATE_TRICK = 0,
+    TRICK_TRACK_UPDATE_STEP,
+};
 
 enum TrickConstraintType_t
 {
@@ -50,12 +72,13 @@ class CTrickStep
 {
 public:
     CTrickStep();
+    ~CTrickStep();
 
     bool PlayerPassesConstraints(CMomentumPlayer *pPlayer);
     void AddConstraint(ITrickStepConstraint *pConstraint) { m_vecConstraints.AddToTail(pConstraint); }
 
-    void SetTrigger(CTriggerTrickZone *pZone) { m_pTrigger = pZone; }
-    CTriggerTrickZone *GetTrigger() const { return m_pTrigger; }
+    void SetTriggerID(int iTriggerID) { m_iTrickZoneID = iTriggerID; }
+    CTriggerTrickZone *GetTrigger();
 
     void SetOptional(bool bOptional) { m_bOptional = bOptional; }
     bool IsOptional() const { return m_bOptional; }
@@ -65,7 +88,7 @@ public:
 
 private:
     bool m_bOptional;
-    CTriggerTrickZone *m_pTrigger;
+    int m_iTrickZoneID;
     CUtlVector<ITrickStepConstraint*> m_vecConstraints;
 };
 
@@ -77,6 +100,7 @@ struct CTrickTag
 
 struct CTrickInfo
 {
+    int m_iDifficulty;
     char m_szName[128];
     char m_szCreationDate[128];
     char m_szCreatorName[64];
@@ -95,7 +119,7 @@ public:
     CTrick();
 
     void SetID(int iID) { m_iID = iID; }
-    int GetID() { return m_iID; }
+    int GetID() const { return m_iID; }
 
     void SetName(const char *pName);
     const char *GetName() const { return m_Info.m_szName; }
@@ -104,6 +128,9 @@ public:
     CTrickStep* Step(int iStepIndx);
 
     void AddStep(CTrickStep *pStep) { m_vecSteps.AddToTail(pStep); }
+
+    int GetDifficulty() const { return m_Info.m_iDifficulty; }
+    void SetDifficulty(int iDifficulty) { m_Info.m_iDifficulty = iDifficulty; }
 
     void SaveToKV(KeyValues *pKvOut);
     bool LoadFromKV(KeyValues *pKvIn);
@@ -120,17 +147,20 @@ class CTrickAttempt
 public:
     CTrickAttempt(CTrick *pTrick);
 
+#ifdef GAME_DLL
     bool ShouldContinue(CTriggerTrickZone *pZone, CMomentumPlayer *pPlayer);
-
     void Complete(CMomentumPlayer *pPlayer);
+#endif
 
     CTrick *GetTrick() const { return m_pTrick; }
 
+    int GetCurrentStep() const { return m_iCurrentStep; }
+
     // In seconds
-    float GetElapsed() const { return gpGlobals->interval_per_tick * float(gpGlobals->tickcount - m_iStartTick); }
+    float GetElapsed() const { return gpGlobals->interval_per_tick * static_cast<float>(gpGlobals->tickcount - m_iStartTick); }
 private:
     int m_iStartTick; // Timer purposes
-    int m_iCurrentStep; // Current trick step that we're on
+    int m_iCurrentStep; // Current trick step that we're on (last trigger that we entered)
 
     CTrick *m_pTrick;
 };
@@ -138,48 +168,83 @@ private:
 struct CMapTeleport
 {
     char m_szName[32];
+#ifdef GAME_DLL
     SavedLocation_t *m_pLoc;
+#endif
 
     CMapTeleport();
     void SaveToKV(KeyValues *pKvOut);
     void LoadFromKV(KeyValues *pKvIn);
 };
 
-class CTricksurfSystem : public CAutoGameSystem
+class CTrickSystem : public CAutoGameSystem
 {
 public:
-    CTricksurfSystem();
+    CTrickSystem();
 
-    void LevelInitPostEntity() override; // Load tricks, start recording
     void LevelShutdownPreEntity() override; // Stop recording, clear out tricks memory
 
-    void SaveTrickDataToFile();
-    void LoadTrickDataFromFile();
+    void LoadTrickDataFromFile(KeyValues *pKvTrickData);
     void LoadTrickDataFromSite(KeyValues *pKvTrickData);
+
+    CTriggerTrickZone *GetTrickZone(int id);
+    void AddZone(CTriggerTrickZone *pZone);
+
+    int GetTrickCount() const { return m_llTrickList.Count(); }
+    CTrick *GetTrick(int index) { return m_llTrickList[index]; }
+    CTrick *GetTrickByID(int iID);
+
+    int GetMapTeleCount() const { return m_vecMapTeleports.Count(); }
+    CMapTeleport *GetMapTele(int index) { return m_vecMapTeleports[index]; }
+
+
+#ifdef GAME_DLL
+    CTrickAttempt *GetTrickAttemptForTrick(int iTrickID);
+
+    void SetTrackedTrick(int iTrickID);
+    int GetTrackedTrick() const { return m_iTrackedTrick; }
+
+    void OnTrickTrackStart();
+    void UpdateTrackedTrickTriggers();
+    void ClearTrackedTrickTriggers();
+    void OnTrickTrackTerminate();
+    void SendTrickTrackEvent(TrickTrackingUpdateType_t type, int numeric);
+
+    void TeleportToTrick(int iTrickID);
+
+    void StartRecording();
+    void StopRecording(const char *pTrickName);
 
     void OnTrickZoneEnter(CTriggerTrickZone *pZone, CMomentumPlayer *pPlayer);
     void OnTrickZoneExit(CTriggerTrickZone *pZone, CMomentumPlayer *pPlayer);
 
     void CompleteTrick(CTrickAttempt *pAttempt);
+    void OnTrickFailed(CTrickAttempt *pAttempt);
     void ClearTrickAttempts();
 
-    void StartRecording(); // Creating a trick
-    void StopRecording(const char *pTrickName); // Stops recording the trick
-
-    CTriggerTrickZone *GetTrickZone(int id);
-    void AddZone(CTriggerTrickZone *pZone);
+    void SaveTrickDataToFile();
 
     void CreateMapTeleport(const char *pName);
     void GoToMapTeleport(int iTeleportNum);
+#else
+    void LevelInitPreEntity() override;
+    void OnTrickDataReceived(KeyValues *pData);
+#endif
 
 private:
+
     const char *GetTricksFileName();
 
-    CUtlVector<CTriggerTrickZone*> m_vecRecordedZones;
-    bool m_bRecording;
+    CUtlVector<CTriggerTrickZone *> m_vecRecordedZones;
 
-    // Tricks currently being attempted.
+#ifdef GAME_DLL
+    int m_iTrackedTrick;
+    bool m_bRecording;
     CUtlVector<CTrickAttempt*> m_vecCurrentTrickAttempts;
+#else
+    void InitializeTrickData(KeyValues *pKvTrickData);
+#endif
+
     // Every trick loaded for the map
     CUtlLinkedList<CTrick*> m_llTrickList;
     // Keeping track. ID is their index into the array.
@@ -187,4 +252,4 @@ private:
     CUtlVector<CMapTeleport*> m_vecMapTeleports;
 };
 
-extern CTricksurfSystem *g_pTricksurfSystem;
+extern CTrickSystem *g_pTrickSystem;

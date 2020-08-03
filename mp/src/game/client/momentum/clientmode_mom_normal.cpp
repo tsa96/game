@@ -11,6 +11,7 @@
 #include "HUD/hud_mapfinished.h"
 #include "spectate/mom_spectator_gui.h"
 #include "spectate/mom_replayui.h"
+#include "tricks/TrickList.h"
 
 #include "IGameUIFuncs.h"
 #include "clientmode_mom_normal.h"
@@ -83,6 +84,10 @@ class CHudViewport : public CBaseViewport
         {
             return new CClientTimesDisplay(this);
         }
+        if (FStrEq(PANEL_TRICK_LIST, pzName))
+        {
+            return new TrickList(this);
+        }
         if (FStrEq(PANEL_REPLAY, pzName))
         {
             return new C_MOMReplayUI(this);
@@ -105,6 +110,7 @@ class CHudViewport : public CBaseViewport
         AddNewPanel(CreatePanelByName(PANEL_TIMES), "PANEL_TIMES");
         AddNewPanel(CreatePanelByName(PANEL_SPECGUI), "PANEL_SPECGUI");
         AddNewPanel(CreatePanelByName(PANEL_LOBBY_MEMBERS), "PANEL_LOBBY_MEMBERS");
+        AddNewPanel(CreatePanelByName(PANEL_TRICK_LIST), "PANEL_TRICK_LIST");
         // BaseClass::CreateDefaultPanels(); // MOM_TODO: do we want the other panels?
     }
 
@@ -126,6 +132,7 @@ ClientModeMOMNormal::ClientModeMOMNormal()
     m_pLeaderboards = nullptr;
     m_pSpectatorGUI = nullptr;
     m_pLobbyMembers = nullptr;
+    m_pTrickList = nullptr;
     m_pViewport = new CHudViewport();
     m_pViewport->Start(gameuifuncs, gameeventmanager);
 }
@@ -185,6 +192,15 @@ int ClientModeMOMNormal::HudElementKeyInput(int down, ButtonCode_t keynum, const
         if (keynum == MOUSE_RIGHT)
         {
             m_pLobbyMembers->SetMouseInputEnabled(true);
+            return 0;
+        }
+    }
+
+    if (m_pTrickList && m_pTrickList->IsVisible())
+    {
+        if (keynum == MOUSE_RIGHT)
+        {
+            m_pTrickList->SetMouseInputEnabled(true);
             return 0;
         }
     }
@@ -272,6 +288,7 @@ void ClientModeMOMNormal::SetupPointers()
     m_pLeaderboards = dynamic_cast<CClientTimesDisplay *>(m_pViewport->FindPanelByName(PANEL_TIMES));
     m_pSpectatorGUI = dynamic_cast<CMOMSpectatorGUI *>(m_pViewport->FindPanelByName(PANEL_SPECGUI));
     m_pLobbyMembers = dynamic_cast<LobbyMembersPanel*>(m_pViewport->FindPanelByName(PANEL_LOBBY_MEMBERS));
+    m_pTrickList = dynamic_cast<TrickList*>(m_pViewport->FindPanelByName(PANEL_TRICK_LIST));
 }
 
 int ClientModeMOMNormal::MovementDirection(const QAngle viewangles, const Vector velocity)

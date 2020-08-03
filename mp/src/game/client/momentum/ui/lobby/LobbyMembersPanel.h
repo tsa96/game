@@ -6,7 +6,8 @@
 #include "GameEventListener.h"
 #include "game/client/iviewport.h"
 
-namespace vgui {
+namespace vgui
+{
     class ListPanelItem;
 }
 

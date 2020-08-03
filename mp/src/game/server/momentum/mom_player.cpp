@@ -22,6 +22,7 @@
 #include "run/mom_replay_base.h"
 #include "mapzones.h"
 #include "fx_mom_shared.h"
+#include "mom_system_tricks.h"
 #include "run/mom_run_safeguards.h"
 #include "movevars_shared.h"
 
@@ -890,16 +891,40 @@ void CMomentumPlayer::ToggleDuckThisFrame(bool bState)
 
 void CMomentumPlayer::CheckChatText(char *p, int bufsize) { g_pMomentumGhostClient->SendChatMessage(p); }
 
+bool CMomentumPlayer::CanTeleport()
+{
+    if (!m_bAllowUserTeleports)
+        return false;
+
+    if (m_Data.m_bMapFinished && !m_cvarMapFinMoveEnable.GetBool())
+        return false;
+
+    if (m_bHasPracticeMode && (m_nButtons & IN_JUMP))
+        return false;
+
+    return true;
+}
+
+void CMomentumPlayer::ManualTeleport(const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity)
+{
+    if (!CanTeleport())
+        return;
+
+    g_pMomentumTimer->SetCanStart(false);
+
+    Teleport(newPosition, newAngles, newVelocity);
+
+    // Main timer needs to stop
+    g_pMomentumTimer->Stop(this);
+
+    // Tricks system needs to cancel all attempts
+    g_pTrickSystem->ClearTrickAttempts();
+}
+
 // Overrides Teleport() so we can take care of the trail
 void CMomentumPlayer::Teleport(const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity)
 {
-    if (!m_bAllowUserTeleports)
-        return;
-
-    if (m_Data.m_bMapFinished && !m_cvarMapFinMoveEnable.GetBool())
-        return;
-
-    if (m_bHasPracticeMode && (m_nButtons & IN_JUMP))
+    if (!CanTeleport())
         return;
 
     // No need to remove the trail here, CreateTrail() already does it for us
