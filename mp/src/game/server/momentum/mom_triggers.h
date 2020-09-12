@@ -353,8 +353,12 @@ protected:
 class CEnvSurfaceTeleport : public CEnvPlayerSurfaceTrigger
 {
     DECLARE_CLASS(CEnvSurfaceTeleport, CEnvPlayerSurfaceTrigger);
+
 public:
-    void	UpdateMaterialThink(void);
+    void UpdateMaterialThink() OVERRIDE;
+
+protected:
+    void PlayerSurfaceChanged(CBasePlayer*, char) OVERRIDE;
 
 private:
     EHANDLE m_hDestinationEnt;
