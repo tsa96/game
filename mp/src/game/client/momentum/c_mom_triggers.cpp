@@ -13,14 +13,24 @@
 #include "tier0/memdbgon.h"
 
 static MAKE_TOGGLE_CONVAR(mom_zone_start_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing an outline for start zone.");
-static MAKE_TOGGLE_CONVAR(mom_zone_end_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable outline for end zone.");
-static MAKE_TOGGLE_CONVAR(mom_zone_stage_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable outline for stage zone(s).");
-static MAKE_TOGGLE_CONVAR(mom_zone_checkpoint_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable outline for checkpoint zone(s).");
+static MAKE_TOGGLE_CONVAR(mom_zone_end_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing an outline for end zone.");
+static MAKE_TOGGLE_CONVAR(mom_zone_stage_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing an outline for stage zone(s).");
+static MAKE_TOGGLE_CONVAR(mom_zone_checkpoint_outline_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing an outline for checkpoint zone(s).");
 
-static ConVar mom_zone_start_outline_color("mom_zone_start_outline_color", "00FF00FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the start zone.");
-static ConVar mom_zone_end_outline_color("mom_zone_end_outline_color", "FF0000FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the end zone.");
-static ConVar mom_zone_stage_outline_color("mom_zone_stage_outline_color", "0000FFFF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the stage zone(s).");
-static ConVar mom_zone_checkpoint_outline_color("mom_zone_checkpoint_outline_color", "FFFF00FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the checkpoint zone(s).");
+static ConVar mom_zone_start_outline_color("mom_zone_start_outline_color", "00FF00FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the start zone outline.");
+static ConVar mom_zone_end_outline_color("mom_zone_end_outline_color", "FF0000FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the end zone outline.");
+static ConVar mom_zone_stage_outline_color("mom_zone_stage_outline_color", "0000FFFF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the stage zone outline(s).");
+static ConVar mom_zone_checkpoint_outline_color("mom_zone_checkpoint_outline_color", "FFFF00FF", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the checkpoint zone outline(s).");
+
+static MAKE_TOGGLE_CONVAR(mom_zone_start_faces_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing side faces for start zone.");
+static MAKE_TOGGLE_CONVAR(mom_zone_end_faces_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing side faces for end zone.");
+static MAKE_TOGGLE_CONVAR(mom_zone_stage_faces_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing side faces for stage zone(s).");
+static MAKE_TOGGLE_CONVAR(mom_zone_checkpoint_faces_enable, "1", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Enable drawing side faces for checkpoint zone(s).");
+
+static ConVar mom_zone_start_faces_color("mom_zone_start_faces_color", "00FF000A", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the start zone faces.");
+static ConVar mom_zone_end_faces_color("mom_zone_end_faces_color", "FF00000A", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the end zone faces.");
+static ConVar mom_zone_stage_faces_color("mom_zone_stage_faces_color", "0000FF0A", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the stage zone faces.");
+static ConVar mom_zone_checkpoint_faces_color("mom_zone_checkpoint_faces_color", "FFFF000A", FCVAR_CLIENTCMD_CAN_EXECUTE | FCVAR_ARCHIVE, "Color of the checkpoint zone faces.");
 
 CTriggerOutlineRenderer::CTriggerOutlineRenderer()
 {
@@ -145,6 +155,12 @@ bool C_BaseMomZoneTrigger::ShouldDraw()
 
 int C_BaseMomZoneTrigger::DrawModel(int flags)
 {
+    if (ShouldDrawFaces() && GetFacesColor())
+    {
+        DrawSideFacesModel(m_OutlineRenderer.facesColor, ShouldDrawOutline() && GetOutlineColor() ? m_OutlineRenderer.outlineColor : Color(0, 0, 0, 0));
+        return 1;
+    }
+
     if (ShouldDrawOutline())
     {
         if ((flags & STUDIO_RENDER) && (flags & (STUDIO_SHADOWDEPTHTEXTURE | STUDIO_SHADOWDEPTHTEXTURE)) == 0)
@@ -182,9 +198,19 @@ bool C_TriggerTimerStart::ShouldDrawOutline()
     return mom_zone_start_outline_enable.GetBool();
 }
 
+bool C_TriggerTimerStart::ShouldDrawFaces()
+{
+    return mom_zone_start_faces_enable.GetBool();
+}
+
 bool C_TriggerTimerStart::GetOutlineColor()
 {
     return MomUtil::GetColorFromHex(mom_zone_start_outline_color.GetString(), m_OutlineRenderer.outlineColor);
+}
+
+bool C_TriggerTimerStart::GetFacesColor()
+{
+    return MomUtil::GetColorFromHex(mom_zone_start_faces_color.GetString(), m_OutlineRenderer.facesColor);
 }
 
 LINK_ENTITY_TO_CLASS(trigger_momentum_timer_stop, C_TriggerTimerStop);
@@ -197,9 +223,19 @@ bool C_TriggerTimerStop::ShouldDrawOutline()
     return mom_zone_end_outline_enable.GetBool();
 }
 
+bool C_TriggerTimerStop::ShouldDrawFaces()
+{
+    return mom_zone_end_faces_enable.GetBool();
+}
+
 bool C_TriggerTimerStop::GetOutlineColor()
 {
     return MomUtil::GetColorFromHex(mom_zone_end_outline_color.GetString(), m_OutlineRenderer.outlineColor);
+}
+
+bool C_TriggerTimerStop::GetFacesColor()
+{
+    return MomUtil::GetColorFromHex(mom_zone_end_faces_color.GetString(), m_OutlineRenderer.facesColor);
 }
 
 LINK_ENTITY_TO_CLASS(trigger_momentum_timer_stage, C_TriggerStage);
@@ -212,9 +248,19 @@ bool C_TriggerStage::ShouldDrawOutline()
     return mom_zone_stage_outline_enable.GetBool();
 }
 
+bool C_TriggerStage::ShouldDrawFaces()
+{
+    return mom_zone_stage_faces_enable.GetBool();
+}
+
 bool C_TriggerStage::GetOutlineColor()
 {
     return MomUtil::GetColorFromHex(mom_zone_stage_outline_color.GetString(), m_OutlineRenderer.outlineColor);
+}
+
+bool C_TriggerStage::GetFacesColor()
+{
+    return MomUtil::GetColorFromHex(mom_zone_stage_faces_color.GetString(), m_OutlineRenderer.outlineColor);
 }
 
 LINK_ENTITY_TO_CLASS(trigger_momentum_timer_checkpoint, C_TriggerCheckpoint);
@@ -227,9 +273,19 @@ bool C_TriggerCheckpoint::ShouldDrawOutline()
     return mom_zone_checkpoint_outline_enable.GetBool();
 }
 
+bool C_TriggerCheckpoint::ShouldDrawFaces()
+{
+    return mom_zone_checkpoint_faces_enable.GetBool();
+}
+
 bool C_TriggerCheckpoint::GetOutlineColor()
 {
     return MomUtil::GetColorFromHex(mom_zone_checkpoint_outline_color.GetString(), m_OutlineRenderer.outlineColor);
+}
+
+bool C_TriggerCheckpoint::GetFacesColor()
+{
+    return MomUtil::GetColorFromHex(mom_zone_checkpoint_faces_color.GetString(), m_OutlineRenderer.facesColor);
 }
 
 // ====================================
