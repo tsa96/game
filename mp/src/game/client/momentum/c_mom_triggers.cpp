@@ -114,6 +114,30 @@ void C_BaseMomZoneTrigger::DrawOutlineModel(const Color& outlineColor)
     }
 }
 
+void C_BaseMomZoneTrigger::DrawSideFacesModel(const Color solidColor, const Color outlineColor)
+{
+    const int iNum = m_vecZonePoints.Count();
+    if (iNum <= 2)
+        return;
+
+    Vector min = Vector(0, 0, 0);
+    for (int i = 0; i < iNum; i++)
+    {
+        const auto vecCurr = m_vecZonePoints[i];
+        const auto vecNext = m_vecZonePoints[(i + 1) % iNum];
+        
+        QAngle angle(0.0f, 0.0f, 0.0f);
+        float iWidth = sqrtf(Sqr(vecNext.x - vecCurr.x) + Sqr(vecNext.y - vecCurr.y));
+
+        VectorAngles(vecNext - vecCurr, angle);
+
+        // `AddBoxOverlay` always draws outlines based on the color given so `AddBoxOverlay2` is used
+        // 0.001 duration used as 0, FLT_EPSILON, 0.01, etc. flickers for some reason
+        // too high of duration causes too much to be rendered at once and can crash / lag the game
+        debugoverlay->AddBoxOverlay2(vecCurr, min, Vector(iWidth, 0, m_flZoneHeight), angle, solidColor, outlineColor, 0.001f);
+    }
+}
+
 bool C_BaseMomZoneTrigger::ShouldDraw()
 {
     return true;

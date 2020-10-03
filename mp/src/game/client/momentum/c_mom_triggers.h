@@ -24,6 +24,7 @@ public:
     virtual bool GetOutlineColor() { return false; }
 
     void DrawOutlineModel(const Color &outlineColor);
+    void DrawSideFacesModel(const Color solidColor, const Color outlineColor);
     bool ShouldDraw() OVERRIDE;
     int DrawModel(int flags) OVERRIDE;
 
