@@ -1258,6 +1258,9 @@ void CFuncShootBoost::Spawn()
     // We don't need health here
     SetMaxHealth(0);
 
+    // Enable "damage" so OnTakeDamage gets called
+    m_takedamage = DAMAGE_YES;
+
     m_debugOverlays |= ((OVERLAY_BBOX_BIT * mom_triggers_overlay_bbox_enable.GetBool()) |
                         (OVERLAY_TEXT_BIT * mom_triggers_overlay_text_enable.GetBool()));
 
