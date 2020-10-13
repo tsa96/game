@@ -69,6 +69,7 @@ struct PBR_Vars_t
     int mraoScale2;
     int emissionScale;
     int emissionScale2;
+    int hsv;
 };
 
 // Beginning the shader
@@ -94,6 +95,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
         SHADER_PARAM(MRAOSCALE2, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "Factors for metalness, roughness, and ambient occlusion");
         SHADER_PARAM(EMISSIONSCALE, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "Color to multiply emission texture with");
         SHADER_PARAM(EMISSIONSCALE2, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "Color to multiply emission texture with");
+        SHADER_PARAM(HSV, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "HSV color to transform $basetexture texture with");
     END_SHADER_PARAMS;
 
     // Setting up variables for this shader
@@ -123,6 +125,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
         info.mraoScale2 = MRAOSCALE2;
         info.emissionScale = EMISSIONSCALE;
         info.emissionScale2 = EMISSIONSCALE2;
+        info.hsv = HSV;
     };
 
     // Initializing parameters
@@ -251,6 +254,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
         bool bHasMraoScale2 = (info.mraoScale2 != -1) && params[info.mraoScale2]->IsDefined();
         bool bHasEmissionScale = (info.emissionScale != -1) && params[info.emissionScale]->IsDefined();
         bool bHasEmissionScale2 = (info.emissionScale2 != -1) && params[info.emissionScale2]->IsDefined();
+        bool bHasHSV = (info.hsv != -1) && params[info.hsv]->IsDefined();
 
         // Determining whether we're dealing with a fully opaque material
         BlendType_t nBlendType = EvaluateBlendRequirements(info.baseTexture, true);
@@ -382,6 +386,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
                 SET_STATIC_PIXEL_SHADER_COMBO(EMISSIVE, bHasEmissionTexture);
                 SET_STATIC_PIXEL_SHADER_COMBO(PARALLAXOCCLUSION, useParallax);
                 SET_STATIC_PIXEL_SHADER_COMBO(WVT, bIsWVT);
+                SET_STATIC_PIXEL_SHADER_COMBO(HSV, bHasHSV);
                 SET_STATIC_PIXEL_SHADER(pbr_ps30);
             }
 
@@ -416,6 +421,17 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
                 color.Init(1.0f, 1.0f, 1.0f);
             }
             pShaderAPI->SetPixelShaderConstant(PSREG_SELFILLUMTINT, color.Base());
+
+            // Setting up HSV adjustment
+            Vector hsv;
+            if (bHasHSV)
+            {
+                params[info.hsv]->GetVecValue(hsv.Base(), 3);
+            }
+            else { 
+                hsv.Init(0.0f, 1.0f, 1.0f); 
+            }
+            pShaderAPI->SetPixelShaderConstant(41, hsv.Base());
 
             // Setting up mrao scale
             Vector mraoScale;

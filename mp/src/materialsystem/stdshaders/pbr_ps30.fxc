@@ -10,6 +10,7 @@
 // STATIC: "EMISSIVE"                   "0..1"
 // STATIC: "PARALLAXOCCLUSION"          "0..1"
 // STATIC: "WVT"                        "0..1"
+// STATIC: "HSV"                        "0..1"
 
 // DYNAMIC: "WRITEWATERFOGTODESTALPHA"  "0..1"
 // DYNAMIC: "PIXELFOGTYPE"              "0..1"
@@ -43,6 +44,7 @@ PixelShaderLightInfo cLightInfo[3]              : register(PSREG_LIGHT_INFO_ARRA
 const float4 g_BaseColor                        : register(PSREG_SELFILLUMTINT);
 const float4 g_EmissionScale                    : register(c2);
 const float4 g_MraoScale                        : register(c27);
+const float3 g_HSV                              : register(c41);
 
 #if PARALLAXOCCLUSION
 const float4 g_ParallaxParms                    : register( c40 );
@@ -123,6 +125,13 @@ float4 main(PS_INPUT i) : COLOR
     float4 albedo = tex2D(BaseTextureSampler, correctedTexCoord);
 #endif
     albedo.xyz *= g_BaseColor;
+
+#if HSV
+    float3 albedoHSV = rgb2hsv(albedo.rgb);
+    albedoHSV.x = fmod(albedoHSV.x + g_HSV.x, 1.0);
+    albedoHSV.yz = clamp(albedoHSV.yz * g_HSV.yz, 0.0, 1.0);
+    albedo.xyz = hsv2rgb(albedoHSV);
+#endif
 
 #if WVT
     float3 mrao = lerp(tex2D(MRAOTextureSampler, correctedTexCoord).xyz * g_MraoScale.xyz, tex2D(MRAO2TextureSampler, correctedTexCoord).xyz * g_Mrao2Scale.xyz, i.blend);
